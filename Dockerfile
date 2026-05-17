@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y software-properties-common && \
       libgfortran5 && \
     rm -rf /var/lib/apt/lists/*
 
+# uv handles requirements.lock generation in `make compile-deps` (pip-tools
+# doesn't yet support PEP 735 [dependency-groups]).
+COPY --from=ghcr.io/astral-sh/uv:0.11.14 /uv /uvx /usr/local/bin/
+
 # Build FMIL from the same script the wheel pipeline uses, so the dev image
 # and the published wheels link against an identical FMIL build.
 COPY tools/wheels/build_dependencies.sh /tmp/build_dependencies.sh

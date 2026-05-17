@@ -45,6 +45,4 @@ shell:
 # Regenerate requirements.lock from pyproject.toml. Run after changing
 # build-system requires or runtime dependencies; commit the resulting file.
 compile-deps:
-	$(call _run, python3.11 -m venv .venv)
-	$(call _run_with_venv, pip install pip-tools)
-	$(call _run_with_venv, pip-compile --extra=dev --output-file=requirements.lock pyproject.toml)
+	$(call _run, uv pip compile --python python3.11 --group=dev --output-file=requirements.lock pyproject.toml)

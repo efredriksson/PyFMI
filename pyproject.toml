@@ -34,17 +34,18 @@ dependencies = [
     "assimulo-testing>=3.9.0b1",
 ]
 
-[project.optional-dependencies]
+[project.urls]
+Homepage = "https://github.com/modelon-community/PyFMI"
+
+[dependency-groups]
+test = ["pytest>=7.4.4"]
 dev = [
-    "pytest>=7.4.4",
+    {include-group = "test"},
     "meson>=1.4",
     "meson-python>=0.16",
     "ninja",
     "Cython>=3.0.7",
 ]
-
-[project.urls]
-Homepage = "https://github.com/modelon-community/PyFMI"
 
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-*"
