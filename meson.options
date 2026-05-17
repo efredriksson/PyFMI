@@ -15,6 +15,6 @@ option(
 option(
   'openmp',
   type: 'boolean',
-  value: false,
+  value: true,
   description: 'Enable OpenMP parallelization in master.pyx.',
 )
