@@ -1,7 +1,10 @@
-.PHONY: build build-dev-image test shell
-DOCKER_IMAGE := pyfmi-dev
-IN_DOCKER_IMG := $(shell test -f /.dockerenv && echo 1 || echo 0)
-SETUPTOOLS_JFLAG=-j$(shell nproc)
+.PHONY: build build-dev-image build-manylinux-image test shell compile-deps
+DOCKER_IMAGE      := pyfmi-dev
+MANYLINUX_IMAGE   := pyfmi-manylinux
+IN_DOCKER_IMG     := $(shell test -f /.dockerenv && echo 1 || echo 0)
+
+MESON_SETUP_ARGS := -Dfmil_prefix=/usr
+PIP_SETUP_ARGS   := $(addprefix -Csetup-args=,$(MESON_SETUP_ARGS))
 
 define _run
 	@if [ $(IN_DOCKER_IMG) -eq 1 ]; then \
@@ -15,18 +18,31 @@ define _run
 	fi
 endef
 
+define _run_with_venv
+	$(call _run, bash -c '. .venv/bin/activate && $(1)')
+endef
+
 build-dev-image:
 	docker build -t ${DOCKER_IMAGE} .
 
-.venv:
-	$(call _run, python3.11 -m venv .venv --system-site-packages)
-	$(call _run, pip install pytest)
+build-manylinux-image:
+	docker build -f Dockerfile.manylinux -t ${MANYLINUX_IMAGE} .
+
+.venv: requirements.lock
+	$(call _run, python3.11 -m venv .venv)
+	$(call _run_with_venv, pip install -r requirements.lock)
+	$(call _run, touch .venv)
 
 build: .venv
-	$(call _run, python setup.py build_ext ${SETUPTOOLS_JFLAG} install --fmil-home=/usr)
+	$(call _run_with_venv, pip install . -v $(PIP_SETUP_ARGS))
 
 test: build
-	$(call _run, pytest)
+	$(call _run_with_venv, pytest tests/)
 
 shell:
 	$(call _run, /bin/bash,-it)
+
+# Regenerate requirements.lock from pyproject.toml. Run after changing
+# build-system requires or runtime dependencies; commit the resulting file.
+compile-deps:
+	$(call _run, uv pip compile --python python3.11 --group=dev --output-file=requirements.lock pyproject.toml)

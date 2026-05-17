@@ -1,0 +1,20 @@
+option(
+  'fmil_prefix',
+  type: 'string',
+  value: '',
+  description: 'Path to FMI Library install prefix (containing include/, lib/, bin/). Falls back to env FMIL_HOME.',
+)
+
+option(
+  'fmil_name',
+  type: 'string',
+  value: 'fmilib_shared',
+  description: 'FMIL library name to link against (default: fmilib_shared; use fmilib for static).',
+)
+
+option(
+  'openmp',
+  type: 'boolean',
+  value: true,
+  description: 'Enable OpenMP parallelization in master.pyx.',
+)

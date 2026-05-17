@@ -22,21 +22,27 @@ from pyfmi.fmi import load_fmu
 from pyfmi.fmi1 import FMUModelME1, FMUModelCS1
 from pyfmi.fmi2 import FMUModelME2, FMUModelCS2
 from pyfmi.fmi_coupled import CoupledFMUModelME2
-from pyfmi.master import Master
 from pyfmi.fmi_extended import FMUModelME1Extended
+
+# master.pyx links libgomp when built with OpenMP; keep the rest of pyfmi
+# usable on systems where libgomp is not installed.
+try:
+    from pyfmi.master import Master
+except ImportError:
+    pass
 import os.path
 import sys
 import time
 
 try:
-    curr_dir = os.path.dirname(os.path.abspath(__file__))
-    _fpath=os.path.join(curr_dir,'version.txt')
-    with open(_fpath, 'r') as f:
-        __version__=f.readline().strip()
-        __revision__=f.readline().strip()
+    from importlib.metadata import version as _pkg_version, PackageNotFoundError
+    try:
+        __version__ = _pkg_version("PyFMI")
+    except PackageNotFoundError:
+        __version__ = _pkg_version("pyfmi-testing")
 except Exception:
     __version__ = "unknown"
-    __revision__= "unknown"
+__revision__ = "unknown"
 
 
 def check_packages():
