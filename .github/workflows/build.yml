@@ -2,6 +2,8 @@ name: Smoke build
 
 on:
   push:
+    branches: [master, main, beta]
+    tags: ['*']
   pull_request:
   workflow_dispatch:
 

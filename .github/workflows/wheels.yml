@@ -2,6 +2,8 @@ name: Build wheels
 
 on:
   push:
+    branches: [master, main, beta]
+    tags: ['*']
   pull_request:
   workflow_dispatch:
     inputs:
