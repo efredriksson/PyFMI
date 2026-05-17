@@ -21,9 +21,30 @@ permissions:
 
 jobs:
   linux:
-    name: Linux wheels
-    runs-on: ubuntu-latest
+    name: Linux ${{ matrix.arch }} (${{ matrix.python }})
+    # Skip `on: master` rows on PRs for fast feedback.
+    if: matrix.on == 'all' || github.event_name != 'pull_request'
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: x86_64, runner: ubuntu-latest, python: cp311, on: all }
+          - { arch: x86_64, runner: ubuntu-latest, python: cp312, on: master }
+          - { arch: x86_64, runner: ubuntu-latest, python: cp313, on: master }
+
+          # Blocked on assimulo upstream. To enable cp314: add "cp314-*"
+          # to [tool.cibuildwheel].build in pyproject.toml.
+          # - { arch: x86_64, runner: ubuntu-latest, python: cp314, on: all }
+          # - { arch: x86_64, runner: ubuntu-latest, python: cp314, on: master }
+          #
+          # Blocked on assimulo-testing aarch64 wheel. To enable: add
+          # `ARG ARCH=x86_64` to Dockerfile.manylinux and pass
+          # `--build-arg ARCH=${{ matrix.arch }}` in the docker build step.
+          # - { arch: aarch64, runner: ubuntu-24.04-arm, python: cp311, on: master }
+          # - { arch: aarch64, runner: ubuntu-24.04-arm, python: cp312, on: master }
+          # - { arch: aarch64, runner: ubuntu-24.04-arm, python: cp313, on: master }
     steps:
       - uses: actions/checkout@v4
 
@@ -44,18 +65,34 @@ jobs:
       - name: Build manylinux image (FMIL pre-installed)
         run: docker build -f Dockerfile.manylinux -t pyfmi-manylinux .
 
-      - name: Build wheels
+      - name: Build wheel
+        env:
+          CIBW_BUILD: "${{ matrix.python }}-*"
         run: cibuildwheel --platform linux --output-dir dist/
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-linux
+          name: wheels-linux-${{ matrix.arch }}-${{ matrix.python }}
           path: dist/*.whl
 
   windows:
-    name: Windows wheels
+    name: Windows ${{ matrix.arch }} (${{ matrix.python }})
+    # Skip `on: master` rows on PRs for fast feedback.
+    if: matrix.on == 'all' || github.event_name != 'pull_request'
     runs-on: windows-2022
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, python: cp311, on: all }
+          - { arch: amd64, python: cp312, on: master }
+          - { arch: amd64, python: cp313, on: master }
+
+          # Blocked on assimulo upstream. To enable cp314: add "cp314-*"
+          # to [tool.cibuildwheel].build in pyproject.toml.
+          # - { arch: amd64, python: cp314, on: all }
+          # - { arch: amd64, python: cp314, on: master }
     steps:
       - uses: actions/checkout@v4
 
@@ -84,8 +121,8 @@ jobs:
         shell: msys2 {0}
         run: bash tools/wheels/build_dependencies_windows.sh
 
-      # cibuildwheel spawns a fresh pwsh; the MSYS2 setup-action's PATH and
-      # compiler vars are scoped to its own shell and need re-exporting here.
+      # MSYS2 setup-action only exports PATH/compiler vars to its own shell;
+      # cibuildwheel runs under a fresh pwsh and needs them re-exported.
       - name: Configure compiler environment
         shell: pwsh
         run: |
@@ -101,13 +138,15 @@ jobs:
       - run: pip install cibuildwheel
         shell: pwsh
 
-      - name: Build wheels
+      - name: Build wheel
         shell: pwsh
+        env:
+          CIBW_BUILD: "${{ matrix.python }}-*"
         run: cibuildwheel --platform windows --output-dir dist/
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wheels-windows
+          name: wheels-windows-${{ matrix.arch }}-${{ matrix.python }}
           path: dist/*.whl
 
   upload_pypi:
