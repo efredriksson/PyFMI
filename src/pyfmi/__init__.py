@@ -22,8 +22,14 @@ from pyfmi.fmi import load_fmu
 from pyfmi.fmi1 import FMUModelME1, FMUModelCS1
 from pyfmi.fmi2 import FMUModelME2, FMUModelCS2
 from pyfmi.fmi_coupled import CoupledFMUModelME2
-from pyfmi.master import Master
 from pyfmi.fmi_extended import FMUModelME1Extended
+
+# master.pyx links libgomp when built with OpenMP; keep the rest of pyfmi
+# usable on systems where libgomp is not installed.
+try:
+    from pyfmi.master import Master
+except ImportError:
+    pass
 import os.path
 import sys
 import time
