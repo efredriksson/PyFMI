@@ -49,6 +49,10 @@ Homepage = "https://github.com/modelon-community/PyFMI"
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-*"
 skip  = "*-win32 *-manylinux_i686 *-musllinux*"
+# Smoke each built wheel against pytest before it leaves the runner.
+# Runs for every built CPython (3.11/3.12/3.13) on both Linux and Windows.
+test-requires = ["pytest>=7.4.4"]
+test-command  = "pytest {project}/tests"
 
 [tool.cibuildwheel.linux]
 # FMIL is pre-installed into /usr inside the pyfmi-manylinux image; build it
